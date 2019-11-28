@@ -5,6 +5,7 @@ classdef Bus < handle
         y
         SOC   % 0: depletion,   100; full
         State % 0: running,     1: charging
+        graph_handle
     end
     methods
         function obj = Bus(init)
@@ -16,15 +17,14 @@ classdef Bus < handle
         function updatePosition(obj, MAP)
             if obj.State == 0   % if the bus is running
                 obj.Position_idx = obj.Position_idx + 1;
-                obj.x = MAP(1,obj.Position_idx);
-                obj.y = MAP(2,obj.Position_idx);
-                if obj.Position_idx == 66 || obj.Position_idx == 130
-                    obj.State = 1;
-                    
+                if obj.Position_idx > length(MAP)
+                    obj.Position_idx = length(MAP);
                 end
+                obj.x = MAP(1, obj.Position_idx);
+                obj.y = MAP(2, obj.Position_idx);
             else                % if the bus is charging
-                obj.x = MAP(1,obj.Position_idx);
-                obj.y = MAP(2,obj.Position_idx);
+                obj.x = MAP(1, obj.Position_idx);
+                obj.y = MAP(2, obj.Position_idx);
             end
         end
         
@@ -32,12 +32,24 @@ classdef Bus < handle
             if obj.State == 0   % if the bus is running
                 obj.SOC = obj.SOC - 0.5;
             else                % if the bus is charging        
-                if obj.SOC >= 80% if the bus is fully charged
-                    obj.State = 0;
-                else            % if the bus needs to be charged
-                    obj.SOC = obj.SOC + 2;
-                end
+                obj.SOC = obj.SOC + 2;
             end            
+        end
+        
+        function updateState(obj, BusStop_idx)
+            if sum(obj.Position_idx == BusStop_idx) && obj.SOC < 80
+                obj.State = 1;
+            else
+                obj.State = 0;
+            end
+        end
+        
+        function graph(obj)
+            if obj.State == 0
+                obj.graph_handle = scatter(obj.x,obj.y,'rd','filled');
+            else
+                obj.graph_handle = scatter(obj.x,obj.y,'gd','filled');
+            end
         end
         
     end

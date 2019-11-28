@@ -1,10 +1,11 @@
+close all
 load('MAP.mat')
 
-plot(PATH(1,:),PATH(2,:));axis equal;grid on;hold on
+plot(PATH(1,:),PATH(2,:),'k','linewidth',2);axis equal;grid on;hold on
 
 BusStop_idx = round(linspace(1,1229,20));
 for j = 1:length(BusStop_idx)
-    scatter(PATH(1,BusStop_idx(j)),PATH(2,BusStop_idx(j)),'r*')
+    scatter(PATH(1,BusStop_idx(j)),PATH(2,BusStop_idx(j)),'b','filled')
 end
 
 %% 
@@ -14,32 +15,30 @@ Init.State = 0;
 
 Bus1 = Bus(Init);
 Bus2 = Bus(Init);
-for i = 1:1:1000
-    Bus1.updatePosition(PATH);
-    Bus1.updateSOC();
+tic;
+t_last = 0;
+while true
+    if toc > 0
+        Bus1.updatePosition(PATH);
+        Bus1.updateSOC();
+        Bus1.updateState(BusStop_idx);      
+    end
     
-    if i >= 50
+    if toc > 15 
         Bus2.updatePosition(PATH);
         Bus2.updateSOC();
+        Bus2.updateState(BusStop_idx);
     end
     
-    if Bus1.State == 0
-        Bus1_symbol = scatter(Bus1.x, Bus1.y, 'rd');
-    else
-        Bus1_symbol = scatter(Bus1.x, Bus1.y, 'gd');
+    Bus1.graph()
+    Bus2.graph()
+    
+    while toc - t_last < 0.1
+        drawnow;
     end
+    t_last = toc;
     
-    if Bus2.State == 0
-        Bus2_symbol = scatter(Bus2.x, Bus2.y, 'rd');
-    else
-        Bus2_symbol = scatter(Bus2.x, Bus2.y, 'gd');
-    end
-    
-    
-    
-    
-    pause(0.1);    
-    delete(Bus1_symbol);
-    delete(Bus2_symbol);
+    delete(Bus1.graph_handle);
+    delete(Bus2.graph_handle);
 end
 
