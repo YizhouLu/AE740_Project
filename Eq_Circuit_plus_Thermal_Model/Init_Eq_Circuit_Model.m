@@ -12,13 +12,13 @@ load('ATLmodel.mat');
 % SOC - OCV Lookup Table -> OCV(z(t),T(t)) = OCV0 + T(t)*OCVrel(z(t))
 OCV0   = model.OCV0;
 OCVrel = model.OCVrel;
-SOC    = model.SOC;    % probably not needed
+SOC    = model.SOC;    % useful for the GetOCV function
 
 % R0, R1 and C1 Parameter Lookup Tables
-R0  = (model.R0Param); % Ohms
-R1  = (model.RParam);  % Ohms
-tau = model.RCParam;   % Sec
-C1 = tau./R1;          % Farad
+R0  = model.R0Param; % Ohms
+R1  = model.RParam;  % Ohms
+tau = model.RCParam; % Sec
+C1 = tau./R1;        % Farad
 
 % temperatures at which Lookup Tables are implemented
 temperatures = model.temps;
@@ -49,10 +49,10 @@ Vt_experiment = interp1(time,Vt_experiment,tstart:deltaT:tfinal);
 current_profile = timeseries(current,t);
 
 % Define initial conditions for the electrical states
-z0  = 1;
+z0  = 0.5;
 Vc0 = 0;
 
-% Define initial conditions for the thermal states
+% Define thermal model parameters
 Cc = 80;   % J/K  (tune)
 Cs = 10;   % J/K  (tune)
 Re = 0.05; % Ohms (combo of R1 and R0)
@@ -60,6 +60,8 @@ Rc = 1;    % K/W  (tune)
 Ru = 4;    % K/W  (tune)
 Tamb = 25; % degC (keep ambient at 25 to start -> if we choose to add
            %       cell to cell conduction this will change)
+           
+% Define initial conditions for the thermal states
 Tc0 = 25;  % degC (initial cell core temperature)
 Ts0 = 25;  % degC (initial cell surface temperature)
 
@@ -70,12 +72,12 @@ A = [-1/(Rc*Cc), 1/(Rc*Cc);
     1/(Cs*Rc), -1/(Cs*Rc) - 1/(Cs*Ru)];
 
 % 2 input system -> heat generation and ambient temperature
-B = [Re/Cc, 0;
+B = [1/Cc, 0;
     0, 1/(Cs*Ru)];
 
-% output both core and surface temp -> will constraint core temperature
-% because it is worst case scenario
+% output both core and surface temp -> we will constrain Tc in the MPC
+% formulation instead of Ts because it is worst case scenario
 C = [1,0;
     0 1]; 
 
-D = [0;0];
+D = [0;0]; % no direct feedthrough term

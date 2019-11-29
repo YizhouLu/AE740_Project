@@ -21,12 +21,14 @@ h_ax1(1) = subplot(311);
 plot(sim_time,Vt_model,'b','LineWidth',2);
 hold on
 plot(t,Vt_experiment,'--r','LineWidth',2);
+ylabel('Voltage [V]');
 legend('Model Vt','Experimental Vt','Location','best');
 grid on
 set(gca,'FontSize',14);
 
 h_ax1(2) = subplot(312);
 plot(sim_time,OCV_out,'b','LineWidth',2);
+ylabel('Voltage [V]');
 legend('Open Circuit Voltage','Location','best');
 grid on;
 set(gca,'Fontsize',14);
@@ -36,6 +38,7 @@ plot(sim_time,SOC_out,'b','LineWidth',2);
 legend('State of Charge','Location','best');
 xlabel('Time [s]');
 grid on;
+sgtitle('Electrical Model');
 set(gca,'Fontsize',14);
 linkaxes(h_ax1,'x');
 
@@ -47,6 +50,7 @@ h_ax2(1) = subplot(211);
 plot(sim_time,Ts,'b','LineWidth',2);
 hold on
 plot(sim_time,Tc,'--r','LineWidth',2);
+ylabel('[deg C]');
 legend('Surface Temperature','Core Temperature','Location','best');
 grid on
 set(gca,'FontSize',14);
@@ -57,5 +61,6 @@ xlabel('Time [s]');
 ylabel('Heat [W]');
 legend('Heat Generation (Joule Heating)','Location','best');
 grid on;
+sgtitle('Thermal Model');
 set(gca,'Fontsize',14);
 linkaxes(h_ax2,'x');
