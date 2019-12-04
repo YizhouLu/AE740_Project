@@ -2,11 +2,9 @@
 
 clc;clear;close
 
-% ATLmodel.mat is a bunch of open source test data we will use to construct
-% our own Equivalent Circuit Model. I chose this cell just because it has a
-% really high capacity but maybe we want to look at the other options to
-% see which fits our needs the most. No code would change except the line
-% below which loads model parameters.
+% SAMmodel.mat is used to construct our own Equivalent Circuit Model. Based
+% on the capacity and open circuit voltage limits, this cell is cylindrical
+% which we need to implement the thermal model.
 load('SAMmodel.mat');
 load('SAM_DYN_15_P25'); % experimental dynamic testing data at 25 C
 

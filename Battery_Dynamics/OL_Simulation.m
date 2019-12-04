@@ -25,14 +25,24 @@ D = [-R0;0];
 Aaug = [A,B;zeros(1,3),1];
 Baug = [zeros(3,1);1];
 Caug = [C,D];
+Np = 20;
+Nc = 5;
 
-x = zeros(4, 50);
-x(:,1) = [0.2; 0; 1; -1];
-y = zeros(2, 50);
+[Phi_Atilde,Gamma,M,S] = formQPMatrices(A, B, C, D, Np, Nc)
 
-for i = 1:50
-   x(:,i+1) = Aaug*x(:,i) + Baug*(0);
-   y(:,i)   = Caug*x(:,i);
-end
 
-plot(x(1,:))
+
+
+
+% plotting
+
+% x = zeros(4, 50);
+% x(:,1) = [0.2; 0; 1; -1];
+% y = zeros(2, 50);
+% 
+% for i = 1:50
+%    x(:,i+1) = Aaug*x(:,i) + Baug*(0);
+%    y(:,i)   = Caug*x(:,i);
+% end
+% 
+% plot(x(1,:))
