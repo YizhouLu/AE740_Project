@@ -49,7 +49,7 @@ Vt_experiment = interp1(time,Vt_experiment,tstart:deltaT:tfinal);
 current_profile = timeseries(current,t);
 
 % Define initial conditions for the electrical states
-z0  = 0.5;
+z0  = 1;
 Vc0 = 0;
 
 % Define thermal model parameters
@@ -65,7 +65,7 @@ Tamb = 25; % degC (keep ambient at 25 to start -> if we choose to add
 Tc0 = 25;  % degC (initial cell core temperature)
 Ts0 = 25;  % degC (initial cell surface temperature)
 
-% Put the thermal model into State Space form since easier to visualize
+% Put the thermal model into State Space form 
 
 % state dynamics
 A = [-1/(Rc*Cc), 1/(Rc*Cc);
@@ -80,4 +80,4 @@ B = [1/Cc, 0;
 C = [1,0;
     0 1]; 
 
-D = [0;0]; % no direct feedthrough term
+D = [0 0;0 0]; % no direct feedthrough term
