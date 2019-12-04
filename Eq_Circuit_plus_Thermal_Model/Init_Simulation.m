@@ -7,7 +7,8 @@ clc;clear;close
 % really high capacity but maybe we want to look at the other options to
 % see which fits our needs the most. No code would change except the line
 % below which loads model parameters.
-load('ATLmodel.mat');
+load('SAMmodel.mat');
+load('SAM_DYN_15_P25'); % experimental dynamic testing data at 25 C
 
 % SOC - OCV Lookup Table -> OCV(z(t),T(t)) = OCV0 + T(t)*OCVrel(z(t))
 OCV0   = model.OCV0;
@@ -27,7 +28,6 @@ temperatures = model.temps;
 Q = mean(model.QParam); % Ah
 
 % use experimental data to validate the model
-load('Dynamic_data.mat')
 time = DYNData.script1.time; 
 current = DYNData.script1.current;
 Vt_experiment = DYNData.script1.voltage;
