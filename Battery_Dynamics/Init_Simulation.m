@@ -2,12 +2,11 @@
 
 clc;clear;close
 
-% ATLmodel.mat is a bunch of open source test data we will use to construct
-% our own Equivalent Circuit Model. I chose this cell just because it has a
-% really high capacity but maybe we want to look at the other options to
-% see which fits our needs the most. No code would change except the line
-% below which loads model parameters.
-load('ATLmodel.mat');
+% SAMmodel.mat is used to construct our own Equivalent Circuit Model. Based
+% on the capacity and open circuit voltage limits, this cell is cylindrical
+% which we need to implement the thermal model.
+load('SAMmodel.mat');
+load('SAM_DYN_15_P25'); % experimental dynamic testing data at 25 C
 
 % SOC - OCV Lookup Table -> OCV(z(t),T(t)) = OCV0 + T(t)*OCVrel(z(t))
 OCV0   = model.OCV0;
@@ -27,7 +26,6 @@ temperatures = model.temps;
 Q = mean(model.QParam); % Ah
 
 % use experimental data to validate the model
-load('Dynamic_data.mat')
 time = DYNData.script1.time; 
 current = DYNData.script1.current;
 Vt_experiment = DYNData.script1.voltage;
@@ -49,7 +47,7 @@ Vt_experiment = interp1(time,Vt_experiment,tstart:deltaT:tfinal);
 current_profile = timeseries(current,t);
 
 % Define initial conditions for the electrical states
-z0  = 0.5;
+z0  = 1;
 Vc0 = 0;
 
 % Define thermal model parameters
@@ -65,7 +63,7 @@ Tamb = 25; % degC (keep ambient at 25 to start -> if we choose to add
 Tc0 = 25;  % degC (initial cell core temperature)
 Ts0 = 25;  % degC (initial cell surface temperature)
 
-% Put the thermal model into State Space form since easier to visualize
+% Put the thermal model into State Space form 
 
 % state dynamics
 A = [-1/(Rc*Cc), 1/(Rc*Cc);
@@ -80,4 +78,4 @@ B = [1/Cc, 0;
 C = [1,0;
     0 1]; 
 
-D = [0;0]; % no direct feedthrough term
+D = [0 0;0 0]; % no direct feedthrough term
