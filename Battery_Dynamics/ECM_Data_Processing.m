@@ -4,7 +4,7 @@
 
 % electrical outputs
 sim_time = out.tout;
-Vt_model = out.terminal_voltage;
+Vt_model = out.Vt;
 OCV_out = out.OCV;
 SOC_out = out.SOC;
 HeatGen = out.HeatGen;

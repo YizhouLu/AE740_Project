@@ -15,6 +15,7 @@ Init.State = 0;
 
 Bus1 = Bus(Init);
 Bus2 = Bus(Init);
+Bus3 = Bus(Init);
 tic;
 t_last = 0;
 while true
@@ -30,8 +31,15 @@ while true
         Bus2.updateState(BusStop_idx);
     end
     
-    Bus1.graph()
-    Bus2.graph()
+    if toc > 30 
+        Bus3.updatePosition(PATH);
+        Bus3.updateSOC();
+        Bus3.updateState(BusStop_idx);
+    end
+    
+    Bus1.graph();
+    Bus2.graph();
+    Bus3.graph();
     
     while toc - t_last < 0.1
         drawnow;
@@ -40,5 +48,6 @@ while true
     
     delete(Bus1.graph_handle);
     delete(Bus2.graph_handle);
+    delete(Bus3.graph_handle);
 end
 
