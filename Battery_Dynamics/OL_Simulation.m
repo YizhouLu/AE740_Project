@@ -61,8 +61,8 @@ delta_ulimit.min = -delta_ulimit.max;
 
 % constrain the terminal voltage with manufacturer's specs which are just
 % open circuit voltage at 0% SOC and 100% SOC at 25 deg C
-OCV_low = GetOCV(0.2,25,model);  % OCV which corresponds to 0.2% SOC 
-OCV_high = GetOCV(0.8,25,model); % OCV which corresponds to 80% SOC
+OCV_low = GetOCV(0.2,Temp,model);  % OCV which corresponds to 0.2% SOC 
+OCV_high = GetOCV(0.8,Temp,model); % OCV which corresponds to 80% SOC
 
 % Q and -Q are used for the current constraints indicating a 1C
 % charge/discharge rate meaning the battery will be fully
@@ -75,7 +75,7 @@ ylimit.min = [-lN; OCV_low; -Q; 0.2];
 [H,L,G,W,T] = formQPMatrices(A, B, C, D, Np, Nc, r, ylimit, delta_ulimit);
 lambda0 = ones(size(G,1),1);
 
-Nsim = 1700;
+Nsim = 1500;
 
 % initial conditions of the extended state
 % [delta_z; delta_Vc; i_(k - 1); e; z; Vc; 1]
@@ -87,9 +87,7 @@ delta_u = delta_u0;
 y0 = C*X0 + D*delta_u0;
 Y = y0;
 
-Output = [];
-States = X0;
-Control = [];
+Control = zeros(1,Nsim);
 
 SOC_setpoint = 0.8;
 
@@ -106,14 +104,13 @@ for i = 1:Nsim
 
     delta_u = DeltaU(1);  % delta u
     u = delta_u + X0(3);  % actual control actuation
+    Control(1,i) = u;
 
     X(:,i+1) = A*X(:,i) + B*delta_u; % [delta_z; delta_Vc; i_(k - 1); e; z; Vc; 1]
     Y(:,i)   = C*X(:,i) + D*delta_u; % [e, Vt, i, z]
 
     X0 = X(:,end);
-   
-    Control = [Control, u];
-     
+    
 end
 
 t = 1:1:Nsim; % sampling instant
