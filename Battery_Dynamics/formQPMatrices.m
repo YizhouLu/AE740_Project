@@ -1,4 +1,4 @@
-function [H,L,G,W,T,IMPC] = formQPMatrices(A, B, C, D, Np, Nc, r, ylimit, ulimit)
+function [H,L,G,W,T] = formQPMatrices(A, B, C, D, Np, Nc, r, ylimit, Delta_ulimit)
 
 % Inputs: A, B, C, D are the original state space matrices of the system
 % dynamics. X0 is the set of initial conditions for the EXTENDED state
@@ -49,15 +49,11 @@ function [H,L,G,W,T,IMPC] = formQPMatrices(A, B, C, D, Np, Nc, r, ylimit, ulimit
 % end
 
 %%%%%%%%%%%%%%%
-% Y = Phi*A*x0 + Gamma*DeltaU
+% Y = Phi*x0 + Gamma*DeltaU
 
 Phi = [];
-for i = 1:(Np + 1)
-    if i == 1
-        Phi = C;
-    else
-        Phi = [Phi;C*A^(i-1)];
-    end
+for i = 1:Np
+    Phi = [Phi;C*A^(i)];
 end
 
 % % we actually need Phi*A in the new formulation so spit that out of
@@ -85,14 +81,16 @@ for i = 1:Nc
     end
 end
 
+Gamma = Gamma(size(C,1)+1:end,:);
+
 % Q bar is a symmetric & positive-semi definite matrix. We wish to penalize
 % the error between measured SOC and SOC set point. The output vector is 
 % [e, Vt, i, z]. Here the error is plucked out by Q so that it is
 % penalized, while Vt, i and z are all constrained outputs.
-Q = diag([1, 0, 0, 0]); 
+Q = diag([1, 0, 0, 0]);
 Qbar = blkdiag(Q);
 
-while size(Qbar) ~= (Np + 1)*size(C,1)
+while size(Qbar) ~= Np*size(C,1)
     Qbar = blkdiag(Q,Qbar);
 end
 
@@ -103,8 +101,8 @@ Rbar = r*eye(Nc);
 %%%%%%%%%%%%%%%
 % Cost Function
 
-H = Gamma'*Qbar*Gamma + Rbar;
-L = Gamma'*Qbar*Phi;
+H = 2.*(Gamma'*Qbar*Gamma + Rbar);
+L = 2.*(Gamma'*Qbar*Phi);
 
 % SP = SP*ones(size(Gamma,1),1);
 % H = 2.*(Gamma'*Qbar*Gamma + r);
@@ -121,6 +119,7 @@ L = Gamma'*Qbar*Phi;
 % horizon is 3 and prediction horizon is 10, DeltaU will be constant for
 % steps 4, 5, 6, 7, 8, 9, 10 so I think we only have to constrain the first
 % three.. not sure though.
+% G = [eye(Nc); -eye(Nc)];
 G = [eye(Nc); -eye(Nc); Gamma; -Gamma];
 
 DeltaUmax = [];
@@ -129,8 +128,8 @@ Ymax = [];
 Ymin = [];
 
 for i = 1:Nc
-    DeltaUmax = [DeltaUmax;ulimit.max];
-    DeltaUmin = [DeltaUmin;ulimit.min];
+    DeltaUmax = [DeltaUmax;Delta_ulimit.max];
+    DeltaUmin = [DeltaUmin;Delta_ulimit.min];
 end 
 
 while size(Ymin,1) ~= size(Gamma,1)
@@ -138,10 +137,11 @@ while size(Ymin,1) ~= size(Gamma,1)
     Ymin = [Ymin;ylimit.min];
 end 
 
+% W = [DeltaUmax; -DeltaUmin];
+% T = [zeros(Nc,size(A,1)); zeros(Nc,size(A,1))];
+
 W = [DeltaUmax; -DeltaUmin; Ymax; -Ymin];
 T = [zeros(Nc,size(A,1)); zeros(Nc,size(A,1)); 
     -Phi; Phi];
-
-IMPC = [1, zeros(1,(Nc-1))];
 
 end
