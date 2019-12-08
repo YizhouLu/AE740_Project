@@ -87,7 +87,7 @@ Gamma = Gamma(size(C,1)+1:end,:);
 % the error between measured SOC and SOC set point. The output vector is 
 % [e, Vt, i, z]. Here the error is plucked out by Q so that it is
 % penalized, while Vt, i and z are all constrained outputs.
-Q = diag([1, 0, 0, 0]);
+Q = diag([1.5, 0, 0, 0]);
 Qbar = blkdiag(Q);
 
 while size(Qbar) ~= Np*size(C,1)

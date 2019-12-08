@@ -47,9 +47,9 @@ D = [0; -R0; 1; 0];
 sys_d = ss(A,B,C,D);
 
 % Set parameters for the MPC problem
-Np = 10;   % prediction horizon
-Nc = 5;   % control horizon
-r = 0.1; % control weighting on deltaCurrent
+Np = 10;  % prediction horizon
+Nc = 1;   % control horizon
+r  = 0.5; % control weighting on deltaCurrent
 
 % set the constraints
 lN = 100; % large number for outputs that don't need to be constrained
@@ -61,15 +61,15 @@ delta_ulimit.min = -delta_ulimit.max;
 
 % constrain the terminal voltage with manufacturer's specs which are just
 % open circuit voltage at 0% SOC and 100% SOC at 25 deg C
-OCV_low = GetOCV(0,25,model);  % OCV which corresponds to 0% SOC 
-OCV_high = GetOCV(1,25,model); % OCV which corresponds to 100% SOC
+OCV_low = GetOCV(0.2,25,model);  % OCV which corresponds to 0.2% SOC 
+OCV_high = GetOCV(0.8,25,model); % OCV which corresponds to 80% SOC
 
 % Q and -Q are used for the current constraints indicating a 1C
 % charge/discharge rate meaning the battery will be fully
 % discharged/charged in 1 hour
 
 % extended output: [e, Vt, i, z]
-ylimit.max = [ lN; OCV_high; Q; 0.8];
+ylimit.max = [ lN; OCV_high; 0; 0.8];
 ylimit.min = [-lN; OCV_low; -Q; 0.2];
 
 [H,L,G,W,T] = formQPMatrices(A, B, C, D, Np, Nc, r, ylimit, delta_ulimit);
@@ -100,8 +100,8 @@ for i = 1:Nsim
     Wtilde = W + T*X0;
     q = L*X0;
     
-    [DeltaU, lambda] = myQP(H, q, G, Wtilde, lambda0);
-    %[DeltaU,~,~,~,lambda] = quadprog(H,q,G,Wtilde);
+    %[DeltaU, lambda] = myQP(H, q, G, Wtilde, lambda0);
+    [DeltaU,~,~,~,lambda] = quadprog(H,q,G,Wtilde);
     lambda0 = lambda;
 
     delta_u = DeltaU(1);  % delta u
@@ -112,8 +112,6 @@ for i = 1:Nsim
 
     X0 = X(:,end);
    
-%     States = [States, X(:,i)]; 
-%     Output = [Output, Y(:,i)]; 
     Control = [Control, u];
      
 end
@@ -157,6 +155,3 @@ xlabel('Time [s]');
 legend('State of Charge','Location','best');
 set(gca,'FontSize',14);
 linkaxes(h_ax1,'x');
-
-figure
-plot(Control(:))
