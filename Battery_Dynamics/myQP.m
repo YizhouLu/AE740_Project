@@ -24,7 +24,7 @@ dual_grad = H_dual*lambda + q_dual;
 
 % initialize the algorithm and set the max number of iterations
 k = 1;
-Nit = 1000;
+Nit = 500;
 
 while k <= Nit
     lambda = max(lambda - (1/L)*dual_grad, 0); 
