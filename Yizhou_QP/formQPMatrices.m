@@ -10,9 +10,9 @@ Nc = N.control;
 Q = penalty.Q;
 R = penalty.R;
 
-num_state = 7;
+num_state = 11;
 num_input = 1;
-num_output = 4;
+num_output = 5;
 
 Phi   = zeros((Np+1)*num_output, num_state);
 Gamma = zeros((Np+1)*num_output, Nc*num_input);
