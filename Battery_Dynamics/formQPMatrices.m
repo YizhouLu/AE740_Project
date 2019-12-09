@@ -1,5 +1,4 @@
-function [H,q,G,W,T,Gamma,SP,Phi_mult_Atilde,IMPC,Atilde,Btilde,Ctilde] = ...
-formQPMatrices(A, B, C, D, X0, Np, Nc, r, SP, xlimit, ylimit, ulimit)
+function [H,L,G,W,T] = formQPMatrices(A, B, C, D, Np, Nc, r, ylimit, Delta_ulimit)
 
 % Inputs: A, B, C, D are the original state space matrices of the system
 % dynamics. X0 is the set of initial conditions for the EXTENDED state
@@ -14,90 +13,104 @@ formQPMatrices(A, B, C, D, X0, Np, Nc, r, SP, xlimit, ylimit, ulimit)
 % of stacked Xmax, Xmin, Ymax and Ymin constraints. T is the affine portion
 % of the constraint which is multiplied by X0.
 
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % First form the modified A, B and C matrices to account for
+% % the direct feedthrough term arising from the D matrix. Tried to
+% % generalize for arbitrary input case. Time will tell if it worked lol.
+% 
+% A = [A, B; zeros(size(B,2),size(A,2)), eye(size(B,2))];
+% B = [zeros(size(B,1),1); ones(size(B,2),1)];
+% C = [C, D];
+% 
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% % X = M*x0 + S*DeltaU
+% 
+% M = [];
+% for i = 1:Np
+%     M = [M;A^i];
+% end
+% 
+% col_S = [];
+% for i = 1:Np
+%     col_S = [col_S;(A^(i - 1)*B)];
+% end
+% 
+% S = zeros(Np*size(A,1),Nc*size(B,2));
+% 
+% for i = 1:Nc
+%     if i == 1
+%         S = col_S;
+%     else
+%         col_S = [zeros(size(B,1),1);col_S]; 
+%         col_S((end - size(B,1)) + 1:end,:) = [];
+%         S = [S,col_S];
+%     end
+% end
+
 %%%%%%%%%%%%%%%
-% First form the modified Atilde, Btilde and Ctilde matrices to account for
-% the direct feedthrough term arising from the D matrix. Tried to
-% generalize for arbitrary input case. Time will tell if it worked lol.
+% Y = Phi*x0 + Gamma*DeltaU
 
-Atilde = [A, B; zeros(size(B,2),size(A,2)), eye(size(B,2))];
-Btilde = [zeros(size(B,1),1); ones(size(B,2),1)];
-Ctilde = [C, D];
-
-%%%%%%%%%%%%%%%
-% X = M*x0 + S*DeltaU
-
-M = [];
-for i = 1:(Np)
-    M = [M;Atilde^i];
+Phi = [];
+for i = 1:Np
+    Phi = [Phi;C*A^(i)];
 end
 
-col_S = [];
-for i = 1:(Np)
-    col_S = [col_S;(Atilde^(i - 1)*Btilde)];
-end
+% % we actually need Phi*A in the new formulation so spit that out of
+% % the function instead of just Phi
+% 
+% Phi_mult_A = Phi*A;
 
-S = zeros(size(Atilde,1)*(Np + 1),(Nc*size(Btilde,2)));
-
-for i = 1:(Nc)
+col_Gamma = [];
+for i = 1:(Np + 1)
     if i == 1
-        S = col_S;
+        col_Gamma = D;
     else
-        col_S = [zeros(size(Btilde,1),1);col_S]; 
-        col_S((end - size(Btilde,1)) + 1:end,:) = [];
-        S = [S,col_S];
+        col_Gamma = [col_Gamma;C*(A^(i - 2))*B];
     end
 end
 
-%%%%%%%%%%%%%%%
-% Y = Phi*Atilde*x0 + Gamma*DeltaU
-
-Phi = [];
-for i = 1:(Np)
-    Phi = [Phi;Ctilde*Atilde^(i-1)];
-end
-
-% we actually need Phi*Atilde in the new formulation so spit that out of
-% the function instead of just Phi
-
-Phi_mult_Atilde = Phi*Atilde;
-
-col_Gamma = [];
-for i = 1:(Np)
-    col_Gamma = [col_Gamma;Ctilde*(Atilde^(i - 1))*Btilde];
-end
-
-Gamma = zeros(size(Ctilde,1)*(Np + 1),(Nc*size(Btilde,2)));
-for i = 1:(Nc)
+Gamma = zeros(size(C,1)*(Np + 1),(Nc*size(B,2)));
+for i = 1:Nc
     if i == 1
         Gamma = col_Gamma;
     else
-        col_Gamma = [zeros(size(Ctilde,1),1);col_Gamma]; 
-        col_Gamma((end - size(Ctilde,1)) + 1:end,:) = [];
+        col_Gamma = [zeros(size(C,1),1);col_Gamma]; 
+        col_Gamma((end - size(C,1)) + 1:end,:) = [];
         Gamma = [Gamma,col_Gamma];
     end
 end
 
-% Pluck out only SOC so that we can penalize the difference between the
-% measured SOC and the targe SOC. Q bar is a symmetric & positive-semi
-% definite matrix.
-Q = diag([1, 0, 0, 0]);
+Gamma = Gamma(size(C,1)+1:end,:);
+
+% Q bar is a symmetric & positive-semi definite matrix. We wish to penalize
+% the error between measured SOC and SOC set point. The output vector is 
+% [e, Vt, i, z]. Here the error is plucked out by Q so that it is
+% penalized, while Vt, i and z are all constrained outputs.
+Q = diag([1.5, 0, 0, 0]);
 Qbar = blkdiag(Q);
 
-while size(Qbar) ~= Np*size(Ctilde,1)
+while size(Qbar) ~= Np*size(C,1)
     Qbar = blkdiag(Q,Qbar);
 end
 
+% Rbar is a symmetric & positive definite matrix. It penalizes the the
+% control increment by value r.
+Rbar = r*eye(Nc);
 
 %%%%%%%%%%%%%%%
 % Cost Function
-SP = SP*ones(size(Gamma,1),1);
 
-H = 2.*(Gamma'*Qbar*Gamma + r);
-q = 2.*Gamma'*Qbar*(Phi_mult_Atilde*X0 - SP);
+H = 2.*(Gamma'*Qbar*Gamma + Rbar);
+L = 2.*(Gamma'*Qbar*Phi);
 
-% we might need to move X0 outside the function since that's what we did
-% for HW3 P2, but here we have two terms so we might have to output both if
-% we go that route
+% SP = SP*ones(size(Gamma,1),1);
+% H = 2.*(Gamma'*Qbar*Gamma + r);
+% q = 2.*Gamma'*Qbar*(Phi_mult_A*X0 - SP);
+% % we might need to move X0 outside the function since that's what we did
+% % for HW3 P2, but here we have two terms so we might have to output both if
+% % we go that route
+
 
 %%%%%%%%%%%%%%%
 % Handle constraints
@@ -106,23 +119,17 @@ q = 2.*Gamma'*Qbar*(Phi_mult_Atilde*X0 - SP);
 % horizon is 3 and prediction horizon is 10, DeltaU will be constant for
 % steps 4, 5, 6, 7, 8, 9, 10 so I think we only have to constrain the first
 % three.. not sure though.
-G = [S; -S; eye(Nc); -eye(Nc); Gamma; -Gamma];
+% G = [eye(Nc); -eye(Nc)];
+G = [eye(Nc); -eye(Nc); Gamma; -Gamma];
 
-Xmax = [];
-Xmin = [];
 DeltaUmax = [];
 DeltaUmin = [];
 Ymax = [];
 Ymin = [];
 
-while size(Xmin,1) ~= size(S,1)
-    Xmax = [Xmax;xlimit.max];
-    Xmin = [Xmin;xlimit.min];  
-end
-
 for i = 1:Nc
-    DeltaUmax = [DeltaUmax;ulimit.max];
-    DeltaUmin = [DeltaUmin;ulimit.min];
+    DeltaUmax = [DeltaUmax;Delta_ulimit.max];
+    DeltaUmin = [DeltaUmin;Delta_ulimit.min];
 end 
 
 while size(Ymin,1) ~= size(Gamma,1)
@@ -130,10 +137,11 @@ while size(Ymin,1) ~= size(Gamma,1)
     Ymin = [Ymin;ylimit.min];
 end 
 
-W = [Xmax; -Xmin; DeltaUmax; -DeltaUmin; Ymax; -Ymin];
-T = [-M; M; zeros(Nc,size(Atilde,1)); zeros(Nc,size(Atilde,1)); 
-    -Phi_mult_Atilde; Phi_mult_Atilde];
+% W = [DeltaUmax; -DeltaUmin];
+% T = [zeros(Nc,size(A,1)); zeros(Nc,size(A,1))];
 
-IMPC = [1, zeros(1,(Nc-1))];
+W = [DeltaUmax; -DeltaUmin; Ymax; -Ymin];
+T = [zeros(Nc,size(A,1)); zeros(Nc,size(A,1)); 
+    -Phi; Phi];
 
 end
