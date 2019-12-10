@@ -1,5 +1,4 @@
-function [A_aug, B_aug, C_aug, D_aug] = generateThermalModel(Temp, Current, model)
-dt = 0.001;
+function [A_aug, B_aug, C_aug, D_aug] = generateThmlModel(Temp, Current, model, dt)
 Cc = 80;   % J/K  (tune)
 Cs = 10;   % J/K  (tune)
 Re = 0.05; % Ohms (combo of R1 and R0)

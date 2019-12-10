@@ -7,8 +7,6 @@ Temp = 25; % degC
 SOC = model.SOC;
 OCV = model.OCV0 + Temp*model.OCVrel;
 
-
-
 %% Discrete electrical dynamics
 N = struct();
 N.prediction = 5;
@@ -18,32 +16,35 @@ penalty = struct();
 penalty.Q = diag([1.5, 0, 0, 0, 0]); % output = [e, Vt, i, z, Tc]
 penalty.R = 0.5;                     % input  = di
 
-Q = getParamESC('QParam',Temp,model);    % Battery capacity
 limit = struct();
-limit.y.max = [ 100; GetOCV(0.8, Temp, model);  0; 0.8; 50];
-limit.y.min = [-100; GetOCV(0.2, Temp, model); -Q; 0.2;  0];
-limit.du.max = 100;
+Vt_max = GetOCV(0.8, Temp, model);
+Vt_min = GetOCV(0.2, Temp, model);
+i_min = -getParamESC('QParam',Temp,model);
+limit.y.max = [ 100; Vt_max;     0; 0.8; 50];
+limit.y.min = [-100; Vt_min; i_min; 0.2;  0];
+limit.du.max =  100;
 limit.du.min = -100;
 
-% initial conditions of the extended state
 %    [dz; dVc; i_prev;    e;   z; Vc; 1; dTc; dTs; Tc_prev; Ts_prev]
 X0 = [0;    0;      0; -0.6; 0.2;  0; 1; 0;   0;   25;      25];
-du = 0; % Initial DeltaU is zero
+%    di
+du = 0;
 
 SOC_setpoint = 0.8;
+dt = 0.001;      % sampling time
 
 Nsim = 1500;
 X = zeros(11, Nsim); X(:,1) = X0;
 U = zeros( 1, Nsim);
     
 for i = 1:Nsim
-    [A_electrical, B_electrical, C_electrical, D_electrical] = generateElectricalModel(Temp, model);
-    [A_thermal, B_thermal, C_thermal, D_thermal] = generateThermalModel(Temp, 0.5, model);
+    [A_elec, B_elec, C_elec, D_elec] = generateElecModel(Temp, model, dt);
+    [A_thml, B_thml, C_thml, D_thml] = generateThmlModel(Temp, X0(3), model, dt);
     
-    A_aug = blkdiag(A_electrical, A_thermal);
-    B_aug = [B_electrical;B_thermal];
-    C_aug = blkdiag(C_electrical, C_thermal);
-    D_aug = [D_electrical;D_thermal];
+    A_aug = blkdiag(A_elec, A_thml);
+    B_aug = [B_elec;B_thml];
+    C_aug = blkdiag(C_elec, C_thml);
+    D_aug = [D_elec;D_thml];
     sys_d = ss(A_aug, B_aug, C_aug, D_aug);
     
     [H, L, G, W, T] = formQPMatrices(sys_d, N, penalty, limit);
@@ -70,7 +71,8 @@ for i = 1:Nsim
     X0 = X(:,i+1);
     Temp = Y(5,i);
 end
-
+%% Plot results
+close all
 t = 1:1:Nsim; % sampling instant
 
 figure('Name','Fast Charge Output');
@@ -110,3 +112,7 @@ xlabel('Time [s]');
 legend('State of Charge','Location','best');
 set(gca,'FontSize',14);
 linkaxes(h_ax1,'x');
+
+figure(2)
+plot(t,Y(5,:),'b','LineWidth',2);grid on
+

@@ -1,5 +1,4 @@
-function [A, B, C, D] = generateElectricalModel(Temp, model)
-dt = 0.001;      % sampling time
+function [A, B, C, D] = generateElecModel(Temp, model, dt)
 alpha0 = 3.613;  % yintercept of SOC-OCV approximation
 alpha1 = 0.4631; % slope of SOC-OCV curve between 20% and 80% SOC
 R0  = getParamESC('R0Param',Temp,model); % Ohmic resistance
