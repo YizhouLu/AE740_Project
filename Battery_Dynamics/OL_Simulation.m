@@ -75,7 +75,9 @@ for i = 1:Nsim
 
     x_ode45_curr = [X0(3); X0(4); X0(10); X0(11)];    % [z, Vc, Tc, Ts]
     
-    [t_ode45, x_ode45] = ode45(@(t,x) Dynamics(t, x, u, model), t + dt/10 : dt/10 : t + dt, x_ode45_curr);
+    [t_ode45, x_ode45] = ...
+        ode45(@(t,x) Dynamics(t, x, u, model), t + dt/10 : dt/10 : t + dt, x_ode45_curr);
+    
     x_ode45_next = x_ode45(end,:)';
     t = t_ode45(end);
     

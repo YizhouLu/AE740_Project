@@ -8,10 +8,17 @@ clc;clear;close
 load('SAMmodel.mat');
 load('SAM_DYN_15_P25'); % experimental dynamic testing data at 25 C
 
+% Pack Configuration to match Proterra DuoPower Drivetrain
+num_series   =  96;
+num_parallel = 280;
+
 % SOC - OCV Lookup Table -> OCV(z(t),T(t)) = OCV0 + T(t)*OCVrel(z(t))
 OCV0   = model.OCV0;
 OCVrel = model.OCVrel;
 SOC    = model.SOC;    % useful for the GetOCV function
+
+Pack_OCV0  = num_series.*OCV0;
+Pack_OCVrel = num_series.*OCVrel;
 
 % R0, R1 and C1 Parameter Lookup Tables
 R0  = model.R0Param; % Ohms
@@ -19,11 +26,17 @@ R1  = model.RParam;  % Ohms
 tau = model.RCParam; % Sec
 C1 = tau./R1;        % Farad
 
+Pack_R0 = (num_series.*R0)./num_parallel; %NEED TO ADD CONNECTION RESISTANCES
+Pack_R1 = (num_series.*R1)./num_parallel;
+Pack_C1 = (num_parallel.*C1)./num_series;
+
 % temperatures at which Lookup Tables are implemented
 temperatures = model.temps;
 
 % use the average of the capacity since very little deviation
 Q = mean(model.QParam); % Ah
+
+Pack_Q = num_parallel*Q;
 
 % use experimental data to validate the model
 time = DYNData.script1.time; 
@@ -42,6 +55,7 @@ deltaT = 1; % one-second sampling
 t = (tstart:deltaT:tfinal) - tstart;
 
 current = interp1(time,current,tstart:deltaT:tfinal);
+current = current.*num_parallel;
 Vt_experiment = interp1(time,Vt_experiment,tstart:deltaT:tfinal);
 
 discharge_current_profile = timeseries(current,t);
