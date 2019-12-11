@@ -1,4 +1,4 @@
-function [H, L, G, W, T] = formQPMatrices(sys, N, penalty, limit)
+function [H, L, G, W, T, Phi, Gamma] = formQPMatrices(sys, N, penalty, limit)
 A = sys.A;
 B = sys.B; 
 C = sys.C; 
@@ -39,16 +39,11 @@ G = [...
      Gamma;
     -Gamma];
 
-DeltaUmax = kron(ones(Nc, 1), limit.du.max);
-DeltaUmin = kron(ones(Nc, 1), limit.du.min);
-Ymax      = kron(ones(Np, 1), limit.y.max);
-Ymin      = kron(ones(Np, 1), limit.y.min);
-
 W = [...
-     DeltaUmax; 
-    -DeltaUmin; 
-     Ymax; 
-    -Ymin];
+     kron(ones(Nc, 1), limit.du.max); 
+    -kron(ones(Nc, 1), limit.du.min); 
+     kron(ones(Np, 1), limit.y.max); 
+    -kron(ones(Np, 1), limit.y.min)];
 T = [...
      zeros(Nc,num_state); 
      zeros(Nc,num_state); 
