@@ -1,6 +1,26 @@
-function [A_aug, B_aug, C_aug, D_aug] = generateElecModel(Temp, model, dt)
-alpha0 = 3.613;  % yintercept of SOC-OCV approximation
-alpha1 = 0.4631; % slope of SOC-OCV curve between 20% and 80% SOC
+function [A_aug, B_aug, C_aug, D_aug] = generateElecModel(Temp, SOC, model, dt, coe)
+% if SOC > 0 && SOC < 0.07
+%     a = 10.12;  % slope of SOC-OCV curve between 20% and 80% SOC
+%     b = 3.067;  % yintercept of SOC-OCV approximation
+% elseif SOC >= 0.07 && SOC < 0.165
+%     a = 0.38;
+%     b = 3.624;
+% elseif SOC >= 0.165 && SOC < 0.245
+%     a = 0.6895;
+%     b = 3.581;
+% elseif SOC >= 0.245 && SOC < 0.42
+%     a = 0.3244;
+%     b = 3.694;
+% elseif SOC >= 0.42 && SOC < 0.57
+%     a = 0.3998;
+%     b = 3.624;
+% else
+%     a = 0.7774;
+%     b = 3.403;
+% end    
+
+OCV =  polyval(coe,SOC);
+
 R0  = getParamESC('R0Param',Temp,model); % Ohmic resistance
 R1  = getParamESC('RParam',Temp,model);  % RC circuit resistance
 tau = getParamESC('RCParam',Temp,model); % RC time constant
@@ -20,7 +40,7 @@ A2 = [0,         0,  0;
 B2 = [ -1/(Q*3600);
        1/C1;
          0];
-C2 = [alpha1, -1, alpha0];
+C2 = [0, -1, OCV];
 D2 = -R0;
 
 sys1_d = c2d(ss(A,B,C,D), dt);
