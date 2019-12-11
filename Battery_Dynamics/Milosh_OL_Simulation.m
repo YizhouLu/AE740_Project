@@ -72,7 +72,7 @@ OCV_high = GetOCV(0.8,Temp,model); % OCV which corresponds to 80% SOC
 ylimit.max = [ lN; OCV_high; 0; 0.8];
 ylimit.min = [-lN; OCV_low; -Q; 0.2];
 
-[H,L,G,W,T] = formQPMatrices(A, B, C, D, Np, Nc, r, ylimit, delta_ulimit);
+[H,L,G,W,T] = Milosh_formQPMatrices(A, B, C, D, Np, Nc, r, ylimit, delta_ulimit);
 lambda0 = ones(size(G,1),1);
 
 Nsim = 1500;

@@ -10,6 +10,7 @@ SOC_out = out.SOC;
 HeatGen = out.HeatGen;
 
 % thermal outputs
+HeatGenCurrentProfile = out.HeatGen_current_profile;
 Ts = out.Ts;
 Tc = out.Tc;
 
@@ -17,23 +18,42 @@ Tc = out.Tc;
 figure('Name','Equivalent Circuit Model: Electrical Output');
 set(gcf,'Color','White','Units','Normalized','Position',[0.2 0.2 0.6 0.6]);
 
-h_ax1(1) = subplot(311);
+h_ax1(1) = subplot(221);
 plot(sim_time,Vt_model,'b','LineWidth',2);
 hold on
-plot(t,Vt_experiment,'--r','LineWidth',2);
+if set_profile == 0
+    plot(t,Vt_experiment,'--r','LineWidth',2);
+end
 ylabel('Voltage [V]');
 legend('Model Vt','Experimental Vt','Location','best');
 grid on
 set(gca,'FontSize',14);
 
-h_ax1(2) = subplot(312);
+h_ax1(2) = subplot(222);
 plot(sim_time,OCV_out,'b','LineWidth',2);
 ylabel('Voltage [V]');
 legend('Open Circuit Voltage','Location','best');
 grid on;
 set(gca,'Fontsize',14);
 
-h_ax1(3) = subplot(313);
+h_ax1(3) = subplot(224);
+
+if set_point == 0
+    plot(t,current,'b','LineWidth',2)
+elseif set_point == 1
+    plot(sim_time,charging_current,'b','LineWidth',2)
+else
+    plot(sim_time,HeatGenCurrentProfile,'b','LineWidth',2)
+end
+
+legend('Current Profile','Location','best');
+xlabel('Time [s]');
+grid on;
+sgtitle('Electrical Model');
+set(gca,'Fontsize',14);
+linkaxes(h_ax1,'x');
+
+h_ax1(4) = subplot(224);
 plot(sim_time,SOC_out,'b','LineWidth',2);
 legend('State of Charge','Location','best');
 xlabel('Time [s]');
