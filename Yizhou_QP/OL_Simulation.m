@@ -1,7 +1,7 @@
 clc; clear; close all
 
 load('SAMmodel.mat')
-
+load('SOC_OCV_coe.mat')
 Temp = 25; % C
 %% MPC parameters
 N = struct();
@@ -9,12 +9,12 @@ N.prediction = 10;
 N.control = 1;
 
 penalty = struct();
-penalty.Q = diag([0, 1.5, 0, 0, 0]); % output = [Vt, e, i, z, Tc]
+penalty.Q = diag([0, 10, 0, 0, 0]); % output = [Vt, e, i, z, Tc]
 penalty.R = 0.1;                     % input  = di
 
 limit = struct();
 % Vt_max = GetOCV(0.8, Temp, model);
-Vt_max = 5;
+Vt_max = GetOCV(0.8, Temp, model);
 Vt_min = GetOCV(0.2, Temp, model);
 i_min = -getParamESC('QParam',Temp,model);
 limit.y.max = [Vt_max;  100;     0; 0.8; 50];
@@ -25,8 +25,8 @@ limit.du.min = -100;
 lambda = ones(2 * N.control * 1 + 2 * N.prediction * 5,1);
 
 %% Model initial conditions
-%    [dz; dVc;   z; Vc; 1; i_last;    e; dTc; dTs; Tc_prev; Ts_prev]
-X0 = [ 0;   0; 0.6;  0; 1;      0; -0.2;   0;   0;      25;      25];
+%    [dz; dVc;   z; Vc; 1; i_last;    e; dTc; dTs; Tc; Ts]
+X0 = [ 0;   0; 0.2;  0; 1;      0; -0.6;   0;   0; 25; 25];
 %    di
 dU0 = 0;
 SOC_setpoint = 0.8;
@@ -34,7 +34,7 @@ SOC_setpoint = 0.8;
 %% Simulation parameters
 t  = 0;         % initial time
 dt = 1;       % sampling time
-Nsim = 1000;    % sampling steps
+Nsim = 1800;    % sampling steps
 
 X = zeros(11, Nsim+1); X(:,1) = X0;
 U = zeros( 1, Nsim);
@@ -44,7 +44,8 @@ X_linear = zeros(11, Nsim+1); X_linear(:,1) = X0;
 Y_linear = zeros( 5, Nsim);
 
 for i = 1:Nsim
-    [A_elec, B_elec, C_elec, D_elec] = generateElecModel(X0(10), X0(3), model, dt);
+    tic
+    [A_elec, B_elec, C_elec, D_elec] = generateElecModel(X0(10), X0(3), model, dt, coe);
     [A_thml, B_thml, C_thml, D_thml] = generateThmlModel(X0(10), X0(6), model, dt);
     
     A_aug = blkdiag(A_elec, A_thml);
@@ -63,17 +64,7 @@ for i = 1:Nsim
     du = dU(1);     % delta u
     u = du + X0(6); % actual control actuation
     U(1,i) = u;
-    
-%     disp('u_max')
-%     sum( eye(3)*dU <=  kron(ones(3, 1), limit.du.max))
-%     disp('u_min')
-%     sum(-eye(3)*dU <= -kron(ones(3, 1), limit.du.min))
-%     disp('y_max')
-%     sum( Gamma *dU <=  kron(ones(5,1), limit.y.max) - Phi*X0)
-%     disp('y_min')
-%     sum(-Gamma *dU <= -kron(ones(5,1), limit.y.min) + Phi*X0)
-
-    
+ 
 %     X_linear(:,i+1) = A_aug*X_linear(:,i) + B_aug*du; % [delta_z; delta_Vc; i_(k - 1); e; z; Vc; 1]
 %     Y_linear(:,i)   = C_aug*X_linear(:,i) + D_aug*du; % [Vt, e, i, z, Tc]
 
@@ -83,7 +74,7 @@ for i = 1:Nsim
     t = t_ode45(end);
     
     
-    y = Output(X0, u, model);
+    y = Output(X0, u, model, coe);
     Y(:,i) = y;
     
     X_next = zeros(size(X0));
@@ -103,7 +94,7 @@ for i = 1:Nsim
     
     X0 = X_next;
     dU0 = dU;
-    i
+    toc
 end
 
 %% Plot results
@@ -187,22 +178,16 @@ Ts_dot = (x(3) - x(4))/(Cs * Rc) - (x(4) - 25)/(Cs * Ru);
 x_dot = [z_dot;Vc_dot;Tc_dot;Ts_dot];
 end
 
-function y = Output(x, u, model)
-z = x(3);
+function y = Output(x, u, model, coe)
+z  = x(3);
 Vc = x(4);
+e  = x(7);
 Tc = x(10);
-OCV0 = model.OCV0;
-OCVrel = model.OCVrel;
-OCV_curve = OCV0 + Tc * OCVrel;
-SOC_curve = model.SOC;
-
-OCV = interp1(SOC_curve, OCV_curve, z);
+  
+OCV = polyval(coe, z);
 R0  = getParamESC('R0Param',Tc,model); % Ohmic resistance
 
 Vt = OCV - R0*u - Vc;
-e = x(7);
-i = u;
-z = x(3);
 
-y = [Vt;e;i;z;Tc];
+y = [Vt;e;u;z;Tc];
 end
