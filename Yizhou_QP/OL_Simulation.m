@@ -16,24 +16,29 @@ limit = struct();
 Vt_max = GetOCV(0.8, Temp, model);
 Vt_min = GetOCV(0.2, Temp, model);
 i_min = -getParamESC('QParam',Temp,model);
-limit.y.max = [Vt_max;  100;     0; 0.8; 100];
-limit.y.min = [Vt_min; -100; i_min; 0.2;-100];
+limit.y.max = [Vt_max;  100;     0; 0.8; 50];
+limit.y.min = [Vt_min; -100; i_min; 0.2;  0];
 limit.du.max =  100;
 limit.du.min = -100;
 
 %    [dz; dVc;   z; Vc; 1; i_last;    e; dTc; dTs; Tc_prev; Ts_prev]
-X0 = [ 0;   0; 0.2;  0; 1;      0; -0.6;   0;   0;      25;      25];
+X0 = [ 0;   0; 0.7;  0; 1;      0; -0.1;   0;   0;      25;      25];
 %    di
 du = 0;
-
 SOC_setpoint = 0.8;
+
+
 dt = 0.1;       % sampling time
 t = 0;          % initial time
 
-Nsim = 1000;
+Nsim = 22000;
 X = zeros(11, Nsim+1); X(:,1) = X0;
 U = zeros( 1, Nsim);
 Y = zeros( 5, Nsim);
+
+X_linear = zeros(11, Nsim+1); X_linear(:,1) = X0;
+Y_linear = zeros( 5, Nsim);
+
 tic
 for i = 1:Nsim
     [A_elec, B_elec, C_elec, D_elec] = generateElecModel(X0(10), model, dt);
@@ -60,17 +65,17 @@ for i = 1:Nsim
     u = du + X0(6); % actual control actuation
     U(1,i) = u;
     
-%     X(:,i+1) = A_aug*X(:,i) + B_aug*du; % [delta_z; delta_Vc; i_(k - 1); e; z; Vc; 1]
-%     Y(:,i)   = C_aug*X(:,i) + D_aug*du; % [e, Vt, i, z]
-%     
-%     X0 = X(:,i+1);
-%     Temp = Y(5,i);
-    
+    X_linear(:,i+1) = A_aug*X_linear(:,i) + B_aug*du; % [delta_z; delta_Vc; i_(k - 1); e; z; Vc; 1]
+    Y_linear(:,i)   = C_aug*X_linear(:,i) + D_aug*du; % [e, Vt, i, z]
+
     x_ode45_curr = [X0(3); X0(4); X0(10); X0(11)]; % z, Vc, Tc, Ts
     
     [t_ode45, x_ode45] = ode45(@(t,x) Dynamics(t, x, u, model), t + dt/10 : dt/10 : t + dt, x_ode45_curr);
     x_ode45_next = x_ode45(end,:)';
     t = t_ode45(end);
+    
+    y = Output(X0, u, model);
+    Y(:,i) = y;
     
     X_next = zeros(size(X0));
     X_next(1) = x_ode45_next(1) - X0(3);    % dz_k+1 = z_k+1 - z_k
@@ -92,57 +97,60 @@ end
 toc
 %% Plot results
 close all
-t = (0:1:Nsim)*dt; % sampling instant
+t = (1:1:Nsim)*dt;
 
-figure(1)
-plot(t,X(3,:),'b','LineWidth',2);
+figure('Name','Fast Charge Output');
+set(gcf,'Color','White','Units','Normalized','Position',[0.2 0.2 0.6 0.6]);
 
-figure(2)
-plot(t,X(10,:),'b','LineWidth',2);
+h_ax1(1) = subplot(231); % error
+plot(t,Y(2,:),'b','LineWidth',2);
+hold on; grid on
+plot(t,Y_linear(2,:),'k--','LineWidth',2);
+% no constraints on error so not plotted
+xlabel('Time [s]');
+legend('error','linear error','Location','best');
+set(gca,'FontSize',14);
 
-figure(3)
-plot(t,X(7,:),'b','LineWidth',2);
+h_ax1(2) = subplot(232); % voltage
+plot(t,Y(1,:),'b','LineWidth',2);
+hold on; grid on
+plot(t,Y_linear(1,:),'k--','LineWidth',2);
+plot(t,limit.y.max(1)*ones(size(t)),'--r','LineWidth',2);
+plot(t,limit.y.min(1)*ones(size(t)),'--r','LineWidth',2);
+xlabel('Time [s]');
+legend('terminal voltage','linear terminal voltage', 'Location','best');
+set(gca,'FontSize',14);
 
-% figure('Name','Fast Charge Output');
-% set(gcf,'Color','White','Units','Normalized','Position',[0.2 0.2 0.6 0.6]);
-% 
-% h_ax1(1) = subplot(221); % error
-% plot(t,Y(2,:),'b','LineWidth',2);
-% % no constraints on error so not plotted
-% xlabel('Time [s]');
-% legend('error','Location','best');
-% set(gca,'FontSize',14);
-% 
-% h_ax1(2) = subplot(222); % voltage
-% plot(t,Y(1,:),'b','LineWidth',2);
-% hold on
-% plot(t,limit.y.max(1)*ones(size(t)),'--r','LineWidth',2);
-% plot(t,limit.y.min(1)*ones(size(t)),'--r','LineWidth',2);
-% xlabel('Time [s]');
-% legend('terminal voltage','Location','best');
-% set(gca,'FontSize',14);
-% 
-% h_ax1(1) = subplot(223); % current
-% plot(t,Y(3,:),'b','LineWidth',2);
-% hold on
-% plot(t,limit.y.max(3)*ones(size(t)),'--r','LineWidth',2);
-% plot(t,limit.y.min(3)*ones(size(t)),'--r','LineWidth',2);
-% xlabel('Time [s]');
-% legend('current','Location','best');
-% set(gca,'FontSize',14);
-% 
-% h_ax1(1) = subplot(224); % SOC
-% plot(t,Y(4,:),'b','LineWidth',2);
-% hold on
-% plot(t,limit.y.max(4)*ones(size(t)),'--r','LineWidth',2);
-% plot(t,limit.y.min(4)*ones(size(t)),'--r','LineWidth',2);
-% xlabel('Time [s]');
-% legend('State of Charge','Location','best');
-% set(gca,'FontSize',14);
-% linkaxes(h_ax1,'x');
+h_ax1(1) = subplot(233); % current
+plot(t,Y(3,:),'b','LineWidth',2);
+hold on; grid on
+plot(t,Y_linear(3,:),'k--','LineWidth',2);
+plot(t,limit.y.max(3)*ones(size(t)),'--r','LineWidth',2);
+plot(t,limit.y.min(3)*ones(size(t)),'--r','LineWidth',2);
+xlabel('Time [s]');
+legend('current','linear current','Location','best');
+set(gca,'FontSize',14);
 
-% figure(2)
-% plot(t,Y(5,:),'b','LineWidth',2);grid on
+h_ax1(1) = subplot(234); % SOC
+plot(t,Y(4,:),'b','LineWidth',2);
+hold on; grid on
+plot(t,Y_linear(4,:),'k--','LineWidth',2);
+plot(t,limit.y.max(4)*ones(size(t)),'--r','LineWidth',2);
+plot(t,limit.y.min(4)*ones(size(t)),'--r','LineWidth',2);
+xlabel('Time [s]');
+legend('State of Charge','linear z','Location','best');
+set(gca,'FontSize',14);
+
+h_ax1(1) = subplot(235); % Tc
+plot(t,Y(5,:),'b','LineWidth',2);
+hold on; grid on
+plot(t,Y_linear(5,:),'k--','LineWidth',2);
+plot(t,limit.y.max(5)*ones(size(t)),'--r','LineWidth',2);
+plot(t,limit.y.min(5)*ones(size(t)),'--r','LineWidth',2);
+xlabel('Time [s]');
+legend('Core Temperature','linear Tc','Location','best');
+set(gca,'FontSize',14);
+linkaxes(h_ax1,'x');
 
 function x_dot = Dynamics(~, x, u, model)
 Temp = x(3);
@@ -165,6 +173,27 @@ Tc_dot = Re/Cc * u^2 - (x(3) - x(4))/(Cc * Rc);
 Ts_dot = (x(3) - x(4))/(Cs * Rc) - (x(4) - 25)/(Cs * Ru);
 
 x_dot = [z_dot;Vc_dot;Tc_dot;Ts_dot];
+end
+
+function y = Output(x, u, model)
+z = x(3);
+Vc = x(4);
+Tc = x(10);
+OCV0 = model.OCV0;
+OCVrel = model.OCVrel;
+OCV_curve = OCV0 + Tc * OCVrel;
+SOC_curve = model.SOC;
+
+OCV = interp1(SOC_curve, OCV_curve, z);
+
+R0  = getParamESC('R0Param',Tc,model); % Ohmic resistance
+
+Vt = OCV - R0*u - Vc;
+e = x(7);
+i = u;
+z = x(3);
+
+y = [Vt;e;i;z;Tc];
 end
 
 
