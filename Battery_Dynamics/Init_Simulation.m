@@ -44,10 +44,18 @@ t = (tstart:deltaT:tfinal) - tstart;
 current = interp1(time,current,tstart:deltaT:tfinal);
 Vt_experiment = interp1(time,Vt_experiment,tstart:deltaT:tfinal);
 
-current_profile = timeseries(current,t);
+discharge_current_profile = timeseries(current,t);
+
+set_profile = 0;
+if set_profile == 0
+    z0 = 1;
+elseif set_profile == 1
+    z0 = 0.2;
+else 
+    z0 = 0.5;
+end
 
 % Define initial conditions for the electrical states
-z0  = 1;
 Vc0 = 0;
 
 % Define thermal model parameters
