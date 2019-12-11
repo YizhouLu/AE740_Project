@@ -46,13 +46,20 @@ Vt_experiment = interp1(time,Vt_experiment,tstart:deltaT:tfinal);
 
 discharge_current_profile = timeseries(current,t);
 
+load('U.mat')
+charge_current_profile = timeseries(U);
+
 set_profile = 0;
+
 if set_profile == 0
     z0 = 1;
+    tfinal = t(end);
 elseif set_profile == 1
     z0 = 0.2;
+    tfinal = size(U,2);
 else 
     z0 = 0.5;
+    tfinal = 2000;
 end
 
 % Define initial conditions for the electrical states
