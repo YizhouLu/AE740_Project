@@ -27,15 +27,22 @@ TP_ll = [...
 TP_xy = zeros(2,length(TP_ll));
 TP_xy(:,1) = [0;0];
 PATH = [];
+D = 0;
 for i = 2:length(TP_ll)
     dlat = TP_ll(i,1) - TP_ll(1,1);
     dlong = TP_ll(i,2) - TP_ll(1,2);
-    TP_xy(:,i) = [dlong*111.320*cosd(TP_ll(i,1)); dlat*110.574];
+    TP_xy(:,i) = [dlong*111.320*1000*cosd(TP_ll(i,1)); dlat*110.574*1000];
     
     distance = sqrt((TP_xy(1,i) - TP_xy(1,i-1))^2 + (TP_xy(2,i) - TP_xy(2,i-1))^2);
     direction = (TP_xy(:,i) - TP_xy(:,i-1))/distance;
-    PATH = [PATH, TP_xy(:,i-1) + (0:0.01:distance).*direction];
+    PATH = [PATH, TP_xy(:,i-1) + (0:0.05:distance).*direction];
+    D = D+distance;
 end
+
+figure(1); hold on; grid on; axis equal
+scatter(TP_xy(1,:),TP_xy(2,:))
+plot(TP_xy(1,:),TP_xy(2,:))
+scatter(PATH(1,:), PATH(2,:))
 
 save('MAP', 'PATH')
 
