@@ -21,9 +21,11 @@ set(gcf,'Color','White','Units','Normalized','Position',[0.2 0.2 0.6 0.6]);
 h_ax1(1) = subplot(221);
 plot(sim_time,Vt_model,'b','LineWidth',2);
 hold on
-if set_profile == 0
-    plot(t,Vt_experiment,'--r','LineWidth',2);
-end
+
+% if set_profile == 0
+%     plot(t,Vt_experiment,'--r','LineWidth',2);
+% end
+
 ylabel('Voltage [V]');
 legend('Model Vt','Experimental Vt','Location','best');
 grid on
@@ -36,12 +38,12 @@ legend('Open Circuit Voltage','Location','best');
 grid on;
 set(gca,'Fontsize',14);
 
-h_ax1(3) = subplot(224);
+h_ax1(3) = subplot(223);
 
-if set_point == 0
-    plot(t,current,'b','LineWidth',2)
-elseif set_point == 1
-    plot(sim_time,charging_current,'b','LineWidth',2)
+if set_profile == 0
+    plot(t,pack_current,'b','LineWidth',2)
+elseif set_profile == 1
+    plot(sim_time(2:end),U,'b','LineWidth',2)
 else
     plot(sim_time,HeatGenCurrentProfile,'b','LineWidth',2)
 end
