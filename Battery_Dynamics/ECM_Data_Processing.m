@@ -22,9 +22,9 @@ h_ax1(1) = subplot(221);
 plot(sim_time,Vt_model,'b','LineWidth',2);
 hold on
 
-if set_profile == 0
-    plot(t,Vt_experiment,'--r','LineWidth',2);
-end
+% if set_profile == 0
+%     plot(t,Vt_experiment,'--r','LineWidth',2);
+% end
 
 ylabel('Voltage [V]');
 legend('Model Vt','Experimental Vt','Location','best');
@@ -41,7 +41,7 @@ set(gca,'Fontsize',14);
 h_ax1(3) = subplot(223);
 
 if set_profile == 0
-    plot(t,current,'b','LineWidth',2)
+    plot(t,pack_current,'b','LineWidth',2)
 elseif set_profile == 1
     plot(sim_time(2:end),U,'b','LineWidth',2)
 else
