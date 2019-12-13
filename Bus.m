@@ -2,6 +2,8 @@ classdef Bus < handle
     properties
         Distance    % overall distance on the PATH 
         Position_idx% current node on the PATH
+        direction   % 0: go forward   1: go back 
+        vel
         isRunning   % 1: running,     0: charging
         x           % only for updating graph
         y           % only for updating graph
@@ -24,6 +26,7 @@ classdef Bus < handle
         function obj = Bus(init)
             obj.Distance        = init.Distance;    % update when the bus is running
             obj.Position_idx    = init.Position_idx;% update when the bus is running
+            obj.direction       = init.direction;
             obj.isRunning       = init.isRunning;   % update every iteration
             obj.dz      = init.dz;                  % update when the bus is charging
             obj.dVc     = init.dVc;                 % update when the bus is charging
@@ -44,14 +47,20 @@ classdef Bus < handle
                 if index == 0
                     index = 599;
                 end
-                vel = VELOCITY(index, 2);               % get current velocity at the present node 
-                obj.Distance = obj.Distance + vel * 1;  % get current distance traveled by the bus at the present node
+                obj.vel = VELOCITY(index, 2);               % get current velocity at the present node 
+                if obj.direction == 0
+                    obj.Distance = obj.Distance + obj.vel * 1;  % get current distance traveled by the bus at the present node
+                else 
+                    obj.Distance = obj.Distance - obj.vel * 1;
+                end
                 if obj.Distance == 0
                     obj.Position_idx = 1;
                 else
                     obj.Position_idx = round(obj.Distance/0.05);
                     if obj.Position_idx > length(MAP)
                         obj.Position_idx = length(MAP);
+                    elseif obj.Position_idx < 1
+                        obj.Position_idx = 1;      
                     end
                 end
             end
@@ -61,15 +70,18 @@ classdef Bus < handle
         
         function updateSOC(obj) % TODO: update SOC with velocity/current profile
             if obj.isRunning
-                disp('running');
-                obj.SOC = obj.SOC - 0.0004;
+                if obj.vel > 0.03
+                    obj.SOC = obj.SOC - 0.0004;
+                end
+                obj.SOC
             else
-                disp('charging');
+                obj.SOC
             end            
         end
         
         function updateState(obj, BusStop_idx)    
-            if sum(obj.Position_idx == BusStop_idx) && obj.SOC < 0.9
+            global Param
+            if sum(obj.Position_idx == BusStop_idx) && obj.SOC < Param.SOC_setpoint
                 obj.dz      = obj.X(1);
                 obj.dVc     = obj.X(2);
                 obj.SOC     = obj.X(3);
@@ -81,6 +93,11 @@ classdef Bus < handle
                 obj.Tc      = obj.X(10); 
                 obj.Ts      = obj.X(11);
                 obj.isRunning = 0;
+                if obj.direction == 0
+                    obj.direction = 1;
+                else
+                    obj.direction = 0;
+                end
             else
                 obj.X = [obj.dz; obj.dVc; obj.SOC; obj.Vc; 1; obj.i_last; obj.e; obj.dTc; obj.dTs; obj.Tc; obj.Ts];
                 obj.isRunning = 1;
