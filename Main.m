@@ -1,15 +1,21 @@
 clc; clear; close all
+
 load('MAP.mat');
 load('SpeedProfile.mat');
 load('SAMmodel.mat');
 load('SOC_OCV_pack_coe.mat');
 
+% need to make a few more variables global (thermal params, number of
+% parallel/series cells, and maybe a few more)
 global Param
 Param.SOC_setpoint = 0.9;
+
 %% Simulation parameters
+
 Nsim = 10000;
 
 %% Figure parameters
+
 figure
 subplot(1,2,1)
 plot(PATH(1,:),PATH(2,:),'k','linewidth',2);axis equal;grid on;hold on
@@ -19,6 +25,7 @@ xlabel('Time, s'); title('Bus1 State of Charge'); hold on; grid on;
 xlim([0 Nsim]); ylim([-1 1])
 
 %% Bus stop location
+
 BusStop_idx = [1, 243246];
 for j = 1:length(BusStop_idx)
     subplot(1,2,1)

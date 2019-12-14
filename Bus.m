@@ -71,7 +71,7 @@ classdef Bus < handle
         function updateSOC(obj) % TODO: update SOC with velocity/current profile
             if obj.isRunning
                 if obj.vel > 0.03
-                    obj.SOC = obj.SOC - 0.0004;
+                    obj.SOC = obj.SOC - 0.0003;
                 end
                 obj.SOC
             else

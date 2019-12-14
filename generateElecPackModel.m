@@ -24,29 +24,34 @@ R0_string = R0_brick.*num_series;
 R0_pack   = R0_string./num_strings;
 
 
-
-A = [0,         0;
-      0,-1/(R1*C1)];
+% The delta subsystem [delta_z, delta_Vc] due to linearization
+A = [0,           0;
+     0, -1/(R1*C1)];
+ 
 B = [ -1/(Q_pack*3600);
-       1/C1];
+                 1/C1];
+             
 C = zeros(1,2);
+
 D = 0;
 
-A2 = [0,         0,  0;
-      0,-1/(R1*C1),  0;
-      0,         0,  0];
+% The actual electrical subsystem [z, Vc, 1]
+A2 = [0,          0,  0;
+      0, -1/(R1*C1),  0;
+      0,          0,  0];
+  
 B2 = [ -1/(Q_pack*3600);
-       1/C1;
-         0];
+                   1/C1;
+                     0];
 C2 = [0, -1, OCV];
+
 D2 = -R0_pack;
 
 sys1_d = c2d(ss(A,B,C,D), dt);
 sys2_d = c2d(ss(A2,B2,C2,D2), dt);
 
 % state = [delta_z; delta_Vc; z; Vc; 1; i_last; e]
-
-A_aug = zeros(7);
+A_aug          = zeros(7);
 A_aug(1:2,1:2) = sys1_d.A;
 A_aug(3:5,3:5) = sys2_d.A;  
 A_aug(3:5,6)   = sys2_d.B;  
@@ -69,4 +74,5 @@ D_aug = [sys2_d.D;
                 0;
                 1;
                 0];
+            
 end

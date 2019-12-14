@@ -1,26 +1,35 @@
-function [A_aug, B_aug, C_aug, D_aug] = generateElecModel(Temp, model, dt)
-alpha0 = 3.613;  % yintercept of SOC-OCV approximation
-alpha1 = 0.4631; % slope of SOC-OCV curve between 20% and 80% SOC
+function [A_aug, B_aug, C_aug, D_aug] = generateElecModel(Temp, SOC, model, dt, coe)
+
+OCV =  polyval(coe,SOC);
+
 R0  = getParamESC('R0Param',Temp,model); % Ohmic resistance
 R1  = getParamESC('RParam',Temp,model);  % RC circuit resistance
 tau = getParamESC('RCParam',Temp,model); % RC time constant
 C1 = tau/R1;                             % RC circuit capacitance
 Q = getParamESC('QParam',Temp,model);    % Battery capacity
 
-A = [0,         0;
-      0,-1/(R1*C1)];
+% The delta subsystem [delta_z, delta_Vc] due to linearization
+A = [0,           0;
+     0, -1/(R1*C1)];
+  
 B = [ -1/(Q*3600);
-       1/C1];
+            1/C1];
+   
 C = zeros(1,2);
+
 D = 0;
 
+% The actual electrical subsystem [z, Vc, 1]
 A2 = [0,         0,  0;
       0,-1/(R1*C1),  0;
       0,         0,  0];
+  
 B2 = [ -1/(Q*3600);
-       1/C1;
-         0];
-C2 = [alpha1, -1, alpha0];
+              1/C1;
+                 0];
+     
+C2 = [0, -1, OCV];
+
 D2 = -R0;
 
 sys1_d = c2d(ss(A,B,C,D), dt);
@@ -50,4 +59,5 @@ D_aug = [sys2_d.D;
                 0;
                 1;
                 0];
+
 end
