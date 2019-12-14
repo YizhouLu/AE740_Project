@@ -1,4 +1,5 @@
 function [H, L, G, W, T, Phi, Gamma] = formQPMatrices(sys, N, penalty, limit)
+
 A = sys.A;
 B = sys.B; 
 C = sys.C; 
@@ -16,14 +17,17 @@ num_output = 5;
 
 Phi   = zeros((Np+1)*num_output, num_state);
 Gamma = zeros((Np+1)*num_output, Nc*num_input);
+
 for i = 0:Np
     Phi(i*num_output+(1:num_output), :) = C*A^i;
     if i == 0
         Gamma(1:num_output, 1:num_input) = D;
     else
-        Gamma(i*num_output+(1:num_output), :) = [C*A^(i-1)*B, Gamma((i-1)*num_output+(1:num_output), 1:end-num_input)];
+        Gamma(i*num_output+(1:num_output), :) = ...
+            [C*A^(i-1)*B, Gamma((i-1)*num_output+(1:num_output), 1:end-num_input)];
     end
 end
+
 Phi   = Phi(num_output+1:end,:);
 Gamma = Gamma(num_output+1:end,:);
 
@@ -44,6 +48,7 @@ W = [...
     -kron(ones(Nc, 1), limit.du.min); 
      kron(ones(Np, 1), limit.y.max); 
     -kron(ones(Np, 1), limit.y.min)];
+
 T = [...
      zeros(Nc,num_state); 
      zeros(Nc,num_state); 

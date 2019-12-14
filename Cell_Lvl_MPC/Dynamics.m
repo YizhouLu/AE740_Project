@@ -1,4 +1,5 @@
 function x_dot = Dynamics(~, x, u, model)
+
 Vc = x(2);
 Tc = x(3);
 Ts = x(4);
@@ -23,4 +24,5 @@ Tc_dot = Re/Cc * u^2 - (Tc - Ts)/(Cc * Rc);
 Ts_dot = (Tc - Ts)/(Cs * Rc) - (Ts - Tamb)/(Cs * Ru);
 
 x_dot = [z_dot;Vc_dot;Tc_dot;Ts_dot];
+
 end

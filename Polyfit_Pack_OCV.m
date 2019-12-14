@@ -1,11 +1,12 @@
 load('SAMmodel.mat');
-Tc = 25;
 
+Tc = 25;
 
 OCV0 = model.OCV0;
 OCVrel = model.OCVrel;
 
 % OCV_curve = OCV0 + Tc * OCVrel;
+
 num_series        = 96;
 num_parallel_cell = 20;
 num_strings       = 14;

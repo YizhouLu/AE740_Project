@@ -1,11 +1,12 @@
 function x_dot = Dynamics_pack(~, x, u, model)
+
 Vc = x(2);
 Tc = x(3);
 Ts = x(4);
 
 R1  = getParamESC('RParam',Tc,model);  % RC circuit resistance
 tau = getParamESC('RCParam',Tc,model); % RC time constant
-C1 = tau/R1;                            % RC circuit capacitance
+C1 = tau/R1;                           % RC circuit capacitance
 
 num_series        = 96;
 num_parallel_cell = 20;
@@ -31,4 +32,5 @@ Tc_dot = Re/Cc * u_cell^2 - (Tc - Ts)/(Cc * Rc);
 Ts_dot = (Tc - Ts)/(Cs * Rc) - (Ts - Tamb)/(Cs * Ru);
 
 x_dot = [z_dot;Vc_dot;Tc_dot;Ts_dot];
+
 end
