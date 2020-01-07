@@ -1,16 +1,16 @@
 classdef Bus < handle
     properties
-        Distance    % overall distance on the PATH 
-        Position_idx% current node on the PATH
-        direction   % 0: go forward   1: go back 
+        Distance     % overall distance on the PATH 
+        Position_idx % current node on the PATH
+        direction    % 0: go forward   1: go back 
         vel
-        isRunning   % 1: running,     0: charging
-        x           % only for updating graph
-        y           % only for updating graph
-        graph_handle% only for updating graph
+        isRunning    % 1: running,     0: charging
+        x            % only for updating graph
+        y            % only for updating graph
+        graph_handle % only for updating graph
         dz
         dVc
-        SOC         % 0: depletion,   1; full
+        SOC          % 0: depletion,   1; full
         Vc
         i_last
         e
@@ -68,16 +68,19 @@ classdef Bus < handle
             obj.y = MAP(2, obj.Position_idx);
         end
         
-        function updateSOC(obj) % TODO: update SOC with velocity/current profile
-            if obj.isRunning
-                if obj.vel > 0.03
-                    obj.SOC = obj.SOC - 0.0003;
-                end
-                obj.SOC
-            else
-                obj.SOC
-            end            
+        function updateSOC(obj, SOC)
+            
+            obj.SOC = SOC;
+%             if obj.isRunning
+%                 if obj.vel > 0.03
+%                     obj.SOC = SOC;
+%                 end
+%                 obj.SOC
+%             else
+%                 obj.SOC
+%             end            
         end
+        
         
         function updateState(obj, BusStop_idx)    
             global Param

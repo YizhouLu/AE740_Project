@@ -1,13 +1,8 @@
-function [y, OCV] = Output_pack(x, u, model, coe)
-
+function PackCurrent = BattPowerToCurrent(BattPower,X,OCV,model)
+   
     global Param
-
-    z  = x(3);
-    Vc = x(4);
-    e  = x(7);
-    Tc = x(10);
-
-    OCV = polyval(coe, z);
+    
+    Tc = X(10);
     R0  = getParamESC('R0Param',Tc,model); % Ohmic resistance
 
     % Series Resistance
@@ -16,9 +11,15 @@ function [y, OCV] = Output_pack(x, u, model, coe)
     R0_brick  = R0_eq./Param.num_parallel_cell;
     R0_string = R0_brick.*Param.num_series;
     R0_pack   = R0_string./Param.num_strings;
-
-    Vt = OCV - R0_pack*u - Vc;
-
-    y = [Vt; e; u; z; Tc];
+    
+    Vc = X(4);
+    
+    Vfixed = OCV - Vc;
+    
+    PackCurrent = (Vfixed - sqrt((Vfixed^2) - 4 * R0_pack * BattPower)) / ...
+        (2* R0_pack);
+    
+ 
     
 end
+

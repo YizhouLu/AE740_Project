@@ -14,15 +14,10 @@ penalty   = struct();
 penalty.Q = diag([0, 100, 0, 0, 0]);  % output = [Vt, e, i, z, Tc]
 penalty.R = 1e-4;                     % input  = delta_i
 
-% Pack configuration to meet 220 kWh (Vnom = 365 V, Qpack = 602 Ah)
-num_series        = 96;
-num_parallel_cell = 20;
-num_strings       = 14;
-
 % Use the cell capacity at 25 deg C since it is relatively invariant over
 % the temperature range
 Q_cell = getParamESC('QParam', 25, model); 
-Q_pack = num_parallel_cell * num_strings * Q_cell;
+Q_pack = Param.num_parallel_cell * Param.num_strings * Q_cell;    
 
 % constraints for the MPC problem
 limit = struct();
@@ -30,8 +25,8 @@ limit = struct();
 % since ideally we will never hit these limits and they will guarantee a
 % constant voltage portion during charging assuming SOC setpoint is around
 % 90%
-Vt_max = 4.2025*num_series; 
-Vt_min = 2.8685*num_series;
+Vt_max = 4.2025*Param.num_series; 
+Vt_min = 2.8685*Param.num_series;
 i_max  = 0;
 i_min  = -Q_pack;
 

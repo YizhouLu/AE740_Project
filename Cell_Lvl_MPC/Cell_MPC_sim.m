@@ -11,10 +11,10 @@ N.control = 1;
 
 penalty = struct();
 penalty.Q = diag([0, 100, 0, 0, 0]); % output = [Vt, e, i, z, Tc]
-penalty.R = 1e-4;                    % input = di
+penalty.R = 1e-2;                    % input = di
 
 limit = struct();
-Vt_max = 4.25; 
+Vt_max = 4.2; 
 Vt_min = 3.0; 
 i_min = -getParamESC('QParam',25,model);
 limit.y.max = [Vt_max;  100;     0; 0.9; 50];
@@ -33,11 +33,13 @@ X0 = [ 0;   0; 0.2;  0; 1;      0; -0.7;   0;   0; 25; 25];
 dU0 = 0;
 SOC_setpoint = 0.9;
 
+X0(7) = X0(3) - SOC_setpoint;
+
 %% Simulation parameters
 
 t  = 0;         % initial time
 dt = 1;         % sampling time
-Nsim = 7200;    % sampling steps
+Nsim = 7000;    % sampling steps
 
 X   = zeros(11, Nsim+1); X(:,1) = X0;
 U   = zeros( 1, Nsim);
@@ -155,6 +157,19 @@ legend('Core Temperature','Location','best');
 set(gca,'FontSize',14);
 linkaxes(h_ax1,'x');
 
+% %%
+% figure('Name','OCV_SOC')
+% %set(gcf,'Color','White','Units','Normalized','Position',[0.2 0.2 0.6 0.6]);
+% 
+% plot(model.SOC,model.OCV0 + 25*model.OCVrel,'b','LineWidth',2);
+% hold on; grid on
+% xlabel('SOC');
+% ylabel('Open Circuit Voltage [V]');
+% set(gca,'FontSize',14);
+
+
+%%
+
 function x_dot = Dynamics(~, x, u, model)
 
 Vc = x(2);
@@ -168,7 +183,7 @@ Q = getParamESC('QParam',Tc,model);    % Battery capacity
 
 Cc = 80;   % J/K  (tune)
 Cs = 10;   % J/K  (tune)
-Re = 1;    % Ohms (combo of R1 and R0)
+Re = 2;    % Ohms (combo of R1 and R0)
 Rc = 1;    % K/W  (tune)
 Ru = 4;    % K/W  (tune)
 

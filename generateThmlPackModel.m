@@ -1,20 +1,13 @@
 function [A_aug, B_aug, C_aug, D_aug] = generateThmlPackModel(Temp, Current, model, dt)
 
-Cc = 80;   % J/K  (tune)
-Cs = 10;   % J/K  (tune)
-Re = 1;    % Ohms (combo of R1 and R0)
-Rc = 1;    % K/W  (tune)
-Ru = 4;    % K/W  (tune)
+global Param
 
-num_parallel_cell = 20;
-num_strings       = 14;
+Current = Current / (Param.num_parallel_cell*Param.num_strings);
 
-Current = Current / (num_parallel_cell*num_strings);
-
-A = [  -1/(Rc*Cc),  1/(Rc*Cc);
-        1/(Cs*Rc), -1/(Cs*Rc) - 1/(Cs*Ru)];
+A = [  -1/(Param.Rc*Param.Cc),  1/(Param.Rc*Param.Cc);
+        1/(Param.Cs*Param.Rc), -1/(Param.Cs*Param.Rc) - 1/(Param.Cs*Param.Ru)];
     
-B = [   2*Re*Current/Cc;
+B = [   2*Param.Re*Current/(Param.Cc*Param.num_parallel_cell * Param.num_strings);
                       0];
     
 C = zeros(1,2);
