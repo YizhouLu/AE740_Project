@@ -1,5 +1,7 @@
 function [A_aug, B_aug, C_aug, D_aug] = generateElecPackModel(Temp, SOC, model, dt, coe)
 
+global Param
+
 OCV =  polyval(coe,SOC);
 
 R0  = getParamESC('R0Param',Temp,model); % Ohmic resistance
@@ -7,21 +9,17 @@ R1  = getParamESC('RParam',Temp,model);  % RC circuit resistance
 tau = getParamESC('RCParam',Temp,model); % RC time constant
 C1 = tau/R1;                             % RC circuit capacitance
 
-num_series        = 96;
-num_parallel_cell = 20;
-num_strings       = 14;
-
 
 Q_cell = getParamESC('QParam',Temp,model); % Battery capacity
-Q_pack = num_parallel_cell * num_strings * Q_cell;    
+Q_pack = Param.num_parallel_cell * Param.num_strings * Q_cell;    
 
 
 % Series Resistance
 Rtab      = 0.000125;    % 125 microOhm resistance for each tab
 R0_eq     = R0 + 2*Rtab; % add tab resistance to cell resistance
-R0_brick  = R0_eq./num_parallel_cell;
-R0_string = R0_brick.*num_series;
-R0_pack   = R0_string./num_strings;
+R0_brick  = R0_eq./Param.num_parallel_cell;
+R0_string = R0_brick.*Param.num_series;
+R0_pack   = R0_string./Param.num_strings;
 
 
 % The delta subsystem [delta_z, delta_Vc] due to linearization
@@ -29,7 +27,7 @@ A = [0,           0;
      0, -1/(R1*C1)];
  
 B = [ -1/(Q_pack*3600);
-                 1/C1];
+                 1/(C1*Param.num_parallel_cell * Param.num_strings)];
              
 C = zeros(1,2);
 
@@ -41,7 +39,7 @@ A2 = [0,          0,  0;
       0,          0,  0];
   
 B2 = [ -1/(Q_pack*3600);
-                   1/C1;
+                   1/(C1*Param.num_parallel_cell * Param.num_strings);
                      0];
 C2 = [0, -1, OCV];
 

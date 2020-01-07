@@ -2,7 +2,7 @@ function [A_aug, B_aug, C_aug, D_aug] = generateThmlModel(Temp, Current, model, 
 
 Cc = 80;   % J/K  (tune)
 Cs = 10;   % J/K  (tune)
-Re = 1;    % Ohms (combo of R1 and R0)
+Re = 2;    % Ohms (combo of R1 and R0)
 Rc = 1;    % K/W  (tune)
 Ru = 4;    % K/W  (tune)
 
